@@ -1,0 +1,228 @@
+================================================================================
+  UART TELEMETRY PACKET REFERENCE
+  Auto_Control Project — STM32G474RE Motor Controller
+  Baud rate : 2 000 000 bps (2 Mbaud)
+  Rate      : 1 000 Hz (one packet per TIM6 tick)
+  Framing   : Header 0x7E 0x7E … Footer 0x03 0x03
+  Byte order: Little-endian (ARM Cortex-M4)
+  Float type: IEEE 754 single precision (32-bit)
+================================================================================
+
+  Two packet formats share the same header/footer.
+  Switch is controlled by Live Expression variable:
+
+      kalman_exp_enabled = 0  →  NORMAL packet   (76 bytes)
+      kalman_exp_enabled = 1  →  KALMAN EXP packet (128 bytes)
+
+
+================================================================================
+  PACKET A — NORMAL TELEMETRY  (kalman_exp_enabled = 0)
+  Total size : 76 bytes
+================================================================================
+
+Byte(s)  Size  Type    C Variable           Unit      Description
+-------  ----  ------  -------------------  --------  -------------------------
+  0       1    uint8   —                    —         Header byte 1  (0x7E)
+  1       1    uint8   —                    —         Header byte 2  (0x7E)
+  2– 5    4    float   g_traj_pos           rad       Trajectory reference position
+  6– 9    4    float   g_smooth_vel         rad/s     Trajectory reference velocity
+ 10–13    4    float   g_smooth_accel       rad/s²    Trajectory reference acceleration
+ 14–17    4    float   g_jerk               rad/s³    Trajectory jerk (0 for trapezoid)
+ 18–21    4    float   g_position_rad       rad       Actual encoder position
+ 22–25    4    float   g_velocity_rad_s     rad/s     Actual encoder velocity
+ 26–29    4    float   g_kf4_velocity       rad/s     Kalman4 estimated velocity
+ 30–33    4    float   g_kf4_position       rad       Kalman4 estimated position
+ 34–37    4    float   ss_error_rad         rad       Steady-state position error
+ 38–41    4    float   g_current_A          A         Measured motor current
+ 42–45    4    float   g_kf4_position       rad       Kalman4 estimated position (repeat)
+ 46–49    4    float   g_kf4_velocity       rad/s     Kalman4 estimated velocity (repeat)
+ 50–53    4    float   g_kf4_current        A         Kalman4 estimated current
+ 54–57    4    float   g_kf4_tau_d_obs      N·m       Kalman4 estimated disturbance torque
+ 58–61    4    float   g_motor_voltage      V         Motor commanded voltage
+ 62–65    4    uint32  adc_raw_current      counts    Raw ADC reading (0–4095)
+ 66–69    4    float   i_term_live          —         Velocity PID integral accumulator
+ 70–73    4    float   pos_integral_live    —         Position PID integral accumulator
+ 74        1   uint8   —                    —         Footer byte 1  (0x03)
+ 75        1   uint8   —                    —         Footer byte 2  (0x03)
+
+  Waijung block setting:  Packet size = 76 bytes
+
+
+================================================================================
+  PACKET B — KALMAN EXPERIMENT TELEMETRY  (kalman_exp_enabled = 1)
+  Total size : 128 bytes
+================================================================================
+
+  Activate via Live Expressions:
+    kalman_exp_enabled = 1
+    kf_exp_set_id      = 0.0  (running vary-R set)   OR
+    kf_exp_set_id      = 1.0  (running vary-Q set)
+
+  Waijung block setting:  Packet size = 128 bytes
+  Same header 0x7E 0x7E and footer 0x03 0x03 as Packet A.
+
+--------------------------------------------------------------------------------
+  SECTION 1 — SHARED SIGNALS (bytes 0–29)
+--------------------------------------------------------------------------------
+
+Byte(s)  Size  Type    C Variable           Unit      Description
+-------  ----  ------  -------------------  --------  -------------------------
+  0       1    uint8   —                    —         Header byte 1  (0x7E)
+  1       1    uint8   —                    —         Header byte 2  (0x7E)
+  2– 5    4    float   g_traj_pos           rad       Reference position  (trajectory ideal)
+  6– 9    4    float   g_smooth_vel         rad/s     Reference velocity  (trajectory ideal)
+ 10–13    4    float   g_position_rad       rad       Real position  (encoder)
+ 14–17    4    float   g_velocity_rad_s     rad/s     Real velocity  (encoder)
+ 18–21    4    float   g_current_A          A         Motor current  (ADC measured)
+ 22–25    4    float   g_motor_voltage      V         Motor commanded voltage
+ 26–29    4    float   kf_exp_set_id        —         Experiment label
+                                                        0.0 = varying-R set
+                                                        1.0 = varying-Q set
+
+--------------------------------------------------------------------------------
+  SECTION 2 — KALMAN FILTER STATES (bytes 30–125)
+  Each filter block = 16 bytes  (4 states × 4 bytes each)
+  Order per block:  [position] [velocity] [current] [tau_d]
+--------------------------------------------------------------------------------
+
+  Filter configurations:
+  ┌───────┬────────────┬─────────────┬─────────────────────────────────────────┐
+  │ Index │  sigma_v²  │   r_theta   │  Experiment                             │
+  ├───────┼────────────┼─────────────┼─────────────────────────────────────────┤
+  │  [0]  │   0.01     │   1e-4      │  Fixed Q=0.01, R varied  (large R)      │
+  │  [1]  │   0.01     │   1e-7      │  Fixed Q=0.01, R varied  (mid R)        │
+  │  [2]  │   0.01     │   1e-10     │  Fixed Q=0.01, R varied  (small R)      │
+  │  [3]  │   1.0      │   1e-7      │  Fixed R=1e-7, Q varied  (large Q)      │
+  │  [4]  │   0.01     │   1e-7      │  Fixed R=1e-7, Q varied  (mid Q = [1])  │
+  │  [5]  │   1e-5     │   1e-7      │  Fixed R=1e-7, Q varied  (small Q)      │
+  └───────┴────────────┴─────────────┴─────────────────────────────────────────┘
+
+  sigma_v²  = voltage noise variance  → scales Q matrix  (kf_exp_sigma_v2[])
+  r_theta   = position measurement noise variance         (kf_exp_r_theta[])
+
+  ── Filter [0]  Q=0.01  R=1e-4  (bytes 30–45) ──────────────────────────────
+
+  Byte(s)  Size  Type   Signal name       Unit    Description
+  -------  ----  -----  ----------------  ------  ----------------------------
+   30–33    4    float  kf0_position      rad     KF[0] estimated position  θ
+   34–37    4    float  kf0_velocity      rad/s   KF[0] estimated velocity  ω
+   38–41    4    float  kf0_current       A       KF[0] estimated current   i
+   42–45    4    float  kf0_tau_d         N·m     KF[0] estimated disturbance τ_d
+
+  ── Filter [1]  Q=0.01  R=1e-7  (bytes 46–61) ──────────────────────────────
+
+  Byte(s)  Size  Type   Signal name       Unit    Description
+  -------  ----  -----  ----------------  ------  ----------------------------
+   46–49    4    float  kf1_position      rad     KF[1] estimated position  θ
+   50–53    4    float  kf1_velocity      rad/s   KF[1] estimated velocity  ω
+   54–57    4    float  kf1_current       A       KF[1] estimated current   i
+   58–61    4    float  kf1_tau_d         N·m     KF[1] estimated disturbance τ_d
+
+  ── Filter [2]  Q=0.01  R=1e-10  (bytes 62–77) ─────────────────────────────
+
+  Byte(s)  Size  Type   Signal name       Unit    Description
+  -------  ----  -----  ----------------  ------  ----------------------------
+   62–65    4    float  kf2_position      rad     KF[2] estimated position  θ
+   66–69    4    float  kf2_velocity      rad/s   KF[2] estimated velocity  ω
+   70–73    4    float  kf2_current       A       KF[2] estimated current   i
+   74–77    4    float  kf2_tau_d         N·m     KF[2] estimated disturbance τ_d
+
+  ── Filter [3]  Q=1.0  R=1e-7  (bytes 78–93) ──────────────────────────────
+
+  Byte(s)  Size  Type   Signal name       Unit    Description
+  -------  ----  -----  ----------------  ------  ----------------------------
+   78–81    4    float  kf3_position      rad     KF[3] estimated position  θ
+   82–85    4    float  kf3_velocity      rad/s   KF[3] estimated velocity  ω
+   86–89    4    float  kf3_current       A       KF[3] estimated current   i
+   90–93    4    float  kf3_tau_d         N·m     KF[3] estimated disturbance τ_d
+
+  ── Filter [4]  Q=0.01  R=1e-7  (bytes 94–109) ─────────────────────────────
+
+  Byte(s)  Size  Type   Signal name       Unit    Description
+  -------  ----  -----  ----------------  ------  ----------------------------
+   94– 97   4    float  kf4_position      rad     KF[4] estimated position  θ
+   98–101   4    float  kf4_velocity      rad/s   KF[4] estimated velocity  ω
+  102–105   4    float  kf4_current       A       KF[4] estimated current   i
+  106–109   4    float  kf4_tau_d         N·m     KF[4] estimated disturbance τ_d
+
+  ── Filter [5]  Q=1e-5  R=1e-7  (bytes 110–125) ────────────────────────────
+
+  Byte(s)  Size  Type   Signal name       Unit    Description
+  -------  ----  -----  ----------------  ------  ----------------------------
+  110–113   4    float  kf5_position      rad     KF[5] estimated position  θ
+  114–117   4    float  kf5_velocity      rad/s   KF[5] estimated velocity  ω
+  118–121   4    float  kf5_current       A       KF[5] estimated current   i
+  122–125   4    float  kf5_tau_d         N·m     KF[5] estimated disturbance τ_d
+
+--------------------------------------------------------------------------------
+  SECTION 3 — FOOTER (bytes 126–127)
+--------------------------------------------------------------------------------
+
+  Byte(s)  Size  Type   Value   Description
+  -------  ----  -----  ------  ----------------
+  126       1    uint8  0x03    Footer byte 1
+  127       1    uint8  0x03    Footer byte 2
+
+
+================================================================================
+  WAIJUNG SIMULINK BLOCK SETUP
+================================================================================
+
+  Normal telemetry  (kalman_exp_enabled = 0):
+    Header        : 0x7E 0x7E
+    Footer        : 0x03 0x03
+    Packet size   : 76 bytes
+    Payload bytes : 72  (bytes 2–73)
+
+  Kalman experiment  (kalman_exp_enabled = 1):
+    Header        : 0x7E 0x7E  (same — no Waijung reconfiguration of framing needed)
+    Footer        : 0x03 0x03
+    Packet size   : 128 bytes
+    Payload bytes : 124  (bytes 2–125)
+
+  When switching modes:
+    1. Stop Simulink simulation
+    2. Change Waijung UART Receive block  →  Packet size  76 ↔ 128
+    3. Re-map signal extraction offsets per the tables above
+    4. Restart simulation
+    5. Set kalman_exp_enabled = 1 in Live Expressions
+
+
+================================================================================
+  QUICK SIGNAL-TO-BYTE LOOKUP  (Kalman Experiment Packet)
+================================================================================
+
+  Signal              Bytes     Filter config
+  ------------------  --------  ----------------------------------------
+  ref_position        2–5       (shared)
+  ref_velocity        6–9       (shared)
+  real_position       10–13     (shared)
+  real_velocity       14–17     (shared)
+  motor_current       18–21     (shared, ADC)
+  motor_voltage       22–25     (shared)
+  set_id_label        26–29     (shared, write 0.0 or 1.0)
+  kf0_pos/vel/i/τ_d   30–45     Q=0.01  R=1e-4
+  kf1_pos/vel/i/τ_d   46–61     Q=0.01  R=1e-7   ← baseline
+  kf2_pos/vel/i/τ_d   62–77     Q=0.01  R=1e-10
+  kf3_pos/vel/i/τ_d   78–93     Q=1.0   R=1e-7
+  kf4_pos/vel/i/τ_d   94–109    Q=0.01  R=1e-7   ← identical to kf1 (verify convergence)
+  kf5_pos/vel/i/τ_d   110–125   Q=1e-5  R=1e-7
+  footer              126–127   0x03 0x03
+
+
+================================================================================
+  WITHIN EACH 16-BYTE FILTER BLOCK  (offset relative to block start)
+================================================================================
+
+  +0  bytes  →  position   θ   (rad)
+  +4  bytes  →  velocity   ω   (rad/s)
+  +8  bytes  →  current    i   (A)
+  +12 bytes  →  tau_d      τ   (N·m)
+
+  Formula:  absolute_byte = 30 + (filter_index × 16) + signal_offset
+
+  Examples:
+    kf2_velocity  = byte  30 + (2×16) + 4  = byte  66
+    kf5_tau_d     = byte  30 + (5×16) + 12 = byte 122
+
+================================================================================

@@ -1,0 +1,2 @@
+../Core/Src/Kalman.c:10:6:Kalman_Init	112	static
+../Core/Src/Kalman.c:71:7:Kalman_Update	192	static

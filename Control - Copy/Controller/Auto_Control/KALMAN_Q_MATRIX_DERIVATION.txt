@@ -1,0 +1,254 @@
+================================================================================
+  KALMAN4 PROCESS NOISE COVARIANCE MATRIX Q — STEP-BY-STEP DERIVATION
+  Auto_Control Project — STM32G474RE Motor Controller
+================================================================================
+
+--------------------------------------------------------------------------------
+STEP 1 — Define the Continuous-Time Motor State-Space Model
+--------------------------------------------------------------------------------
+
+State vector (4 states):
+
+    x = [ theta ]   position          (rad)
+        [ omega ]   velocity          (rad/s)
+        [ i     ]   armature current  (A)
+        [ tau_d ]   disturbance torque(N·m)
+
+The continuous-time equations of motion:
+
+  d(theta)/dt = omega
+
+  d(omega)/dt = (N·Kt/J)·i  -  (b/J)·omega  -  (1/J)·tau_d
+
+  d(i)/dt     = (1/L)·v  -  (R/L)·i  -  (N·Ke/L)·omega
+
+  d(tau_d)/dt = 0   (modelled as constant — slow-moving disturbance)
+
+Written in matrix form:  dx/dt = A·x + B·u
+
+        [ 0      1          0        0    ]
+    A = [ 0    -b/J      N·Kt/J    -1/J  ]
+        [ 0  -N·Ke/L    -R/L        0    ]
+        [ 0      0          0        0    ]
+
+    B = [ 0  ]         (control input matrix)
+        [ 0  ]
+        [1/L ]
+        [ 0  ]
+
+    u = v  (applied motor voltage, V)
+
+
+--------------------------------------------------------------------------------
+STEP 2 — Identify Where Process Noise Enters the System
+--------------------------------------------------------------------------------
+
+Real motor drives are never perfect.  The actual voltage applied to the motor
+contains random fluctuations (PWM ripple, driver noise, quantisation):
+
+    v_actual(t) = v_commanded(t) + w(t)
+
+where w(t) is zero-mean white Gaussian voltage noise:
+
+    E[ w(t) ]        = 0
+    E[ w(t)·w(τ) ]  = σ_v² · δ(t − τ)     (power spectral density = σ_v²)
+
+Because v enters only the current equation through (1/L)·v, noise enters the
+state vector ONLY through the current state (row index 2):
+
+    dx/dt = A·x + B·u  +  G·w(t)
+
+    G = B = [ 0   ]     (noise input vector — same channel as control input)
+            [ 0   ]
+            [ 1/L ]
+            [ 0   ]
+
+This is the key insight:  voltage noise drives the current state directly,
+and then propagates into velocity and position through the dynamics.
+
+
+--------------------------------------------------------------------------------
+STEP 3 — Form the Continuous-Time Process Noise Covariance Matrix Qc
+--------------------------------------------------------------------------------
+
+For a single scalar noise source w(t) with variance σ_v²:
+
+    Qc = G · σ_v² · Gᵀ          (outer product, 4×4 matrix)
+
+Expanding:
+
+    Qc = σ_v² ·
+         [ 0·0   0·0   0·(1/L)   0·0 ]
+         [ 0·0   0·0   0·(1/L)   0·0 ]
+         [(1/L)·0  (1/L)·0  (1/L)·(1/L)  (1/L)·0 ]
+         [ 0·0   0·0   0·(1/L)   0·0 ]
+
+    Qc = σ_v² ·
+         [ 0    0       0       0 ]
+         [ 0    0       0       0 ]
+         [ 0    0    1/L²       0 ]
+         [ 0    0       0       0 ]
+
+Only ONE non-zero entry:
+
+    Qc[2][2] = σ_v² / L²
+
+All other entries are zero.  The noise has not yet spread to other states
+— that happens through the dynamics over one sample period Ts.
+
+
+--------------------------------------------------------------------------------
+STEP 4 — Discretise Qc to Get the Discrete-Time Qk (Van Loan Method)
+--------------------------------------------------------------------------------
+
+The exact discrete-time process noise covariance requires the integral:
+
+    Qk = ∫₀ᵀˢ  e^(A·t) · Qc · e^(Aᵀ·t)  dt
+
+This is expensive to compute exactly on a microcontroller.  Instead, expand
+the matrix exponential to second order (sufficient for small Ts = 0.001 s):
+
+    e^(A·t) ≈ I + A·t + A²·t²/2 + ...
+
+Substituting and integrating term by term:
+
+    Qk = Qc·Ts
+       + (A·Qc + Qc·Aᵀ) · Ts²/2
+       + (A·Qc·Aᵀ)      · Ts³/3
+       + higher order terms (negligible for Ts = 1 ms)
+
+Because Qc has only the [2][2] entry non-zero, most products vanish.
+Only three coupling paths survive:
+
+
+  PATH 1 — Noise stays in current state (diagonal, [2][2]):
+  ---------------------------------------------------------
+  From zeroth-order term:     Qc[2][2]·Ts              = σ_v²/L² · Ts
+
+  From first-order term A·Qc:
+    (A·Qc)[2][2] = A[2][2]·Qc[2][2] = (-R/L)·(σ_v²/L²)
+    Contribution: 2·(-R/L)·(σ_v²/L²)·Ts²/2            = -σ_v²/L²·(R/L)·Ts²
+
+  From second-order term A·Qc·Aᵀ:
+    (A·Qc·Aᵀ)[2][2] = A[2][2]²·Qc[2][2] = (R/L)²·(σ_v²/L²)
+    Contribution: (R/L)²·(σ_v²/L²)·Ts³/3
+
+  Combined:
+    Q[2][2] = σ_v²/L² · [ Ts  −  (R/L)·Ts²  +  (R/L)²·Ts³/3 ]
+
+
+  PATH 2 — Noise couples current → velocity ([1][2] and [2][1]):
+  --------------------------------------------------------------
+  From first-order term A·Qc:
+    (A·Qc)[1][2] = A[1][2]·Qc[2][2] = (N·Kt/J)·(σ_v²/L²)
+    Symmetric contribution to [1][2] and [2][1]: (N·Kt/J)·(σ_v²/L²)·Ts²/2
+
+  From second-order term A·Qc·Aᵀ:
+    (A·Qc·Aᵀ)[1][2] = A[1][2]·A[2][2]·Qc[2][2]
+                     = (N·Kt/J)·(-R/L)·(σ_v²/L²)
+    Contribution: (N·Kt/J)·(-R/L)·(σ_v²/L²)·Ts³/3
+
+  Combined (symmetric):
+    Q[1][2] = Q[2][1] = σ_v²·(N·Kt/J)/L² · [ Ts²/2  −  (R/L)·Ts³/3 ]
+
+
+  PATH 3 — Noise couples current → velocity → velocity ([1][1]):
+  --------------------------------------------------------------
+  From second-order term A·Qc·Aᵀ only:
+    (A·Qc·Aᵀ)[1][1] = A[1][2]²·Qc[2][2] = (N·Kt/J)²·(σ_v²/L²)
+    Contribution: (N·Kt/J)²·(σ_v²/L²)·Ts³/3
+
+  Combined:
+    Q[1][1] = σ_v²·(N·Kt/J)²/L² · Ts³/3
+
+
+  ALL OTHER ENTRIES remain zero (position and tau_d states are not
+  directly driven by voltage noise within one sample period at this order).
+
+
+--------------------------------------------------------------------------------
+STEP 5 — Final Discrete-Time Q Matrix
+--------------------------------------------------------------------------------
+
+Define shorthand:
+    α  = σ_v² / L²
+    β  = N·Kt / J          (torque-to-inertia chain)
+    ρ  = R / L             (electrical pole)
+    Ts = 0.001 s           (sample period)
+
+    Q[2][2] = α · ( Ts  −  ρ·Ts²  +  ρ²·Ts³/3 )
+    Q[1][2] = Q[2][1] = α·β · ( Ts²/2  −  ρ·Ts³/3 )
+    Q[1][1] = α·β² · Ts³/3
+
+Full 4×4 matrix (row/col order: theta=0, omega=1, i=2, tau_d=3):
+
+         theta    omega        i       tau_d
+    [ [  0,       0,           0,        0  ],   ← theta
+      [  0,     Q[1][1],    Q[1][2],     0  ],   ← omega
+      [  0,     Q[2][1],    Q[2][2],     0  ],   ← i
+      [  0,       0,           0,        0  ] ]  ← tau_d
+
+Observation:
+  - Q grows as σ_v² increases   (more voltage noise → less model trust)
+  - Q[1][1] is Ts³ order        (noise reaches velocity weakly, 3rd order)
+  - Q[1][2] is Ts² order        (coupling stronger, 2nd order)
+  - Q[2][2] is Ts  order        (current noise strongest, 1st order)
+
+
+--------------------------------------------------------------------------------
+STEP 6 — Code Implementation (how it appears in main.c TIM6 ISR)
+--------------------------------------------------------------------------------
+
+Every 1 ms tick, the code recomputes Q because motor params can be
+changed live via Live Expressions without reflashing:
+
+    /* Pre-compute sigma-independent base coefficients */
+    float q22_base = inv_L2 * (Ts - RL*Ts2 + RL*RL*Ts3/3.0f);
+    float q12_base = inv_L2 * NKtJ * (Ts2*0.5f - RL*Ts3/3.0f);
+    float q11_base = inv_L2 * (NKtJ*NKtJ) * Ts3/3.0f;
+
+    /* Scale by sigma_v2 for main KF */
+    my_kf4.Q_data[10] = kf4_sigma_v2 * q22_base;   // Q[2][2]
+    my_kf4.Q_data[6]  = kf4_sigma_v2 * q12_base;   // Q[1][2]
+    my_kf4.Q_data[9]  = kf4_sigma_v2 * q12_base;   // Q[2][1]
+    my_kf4.Q_data[5]  = kf4_sigma_v2 * q11_base;   // Q[1][1]
+
+    /* For Kalman experiment: same base, different sigma per instance */
+    for n in 0..5:
+        kf_exp[n].Q[2][2] = kf_exp_sigma_v2[n] * q22_base
+        ...
+
+
+--------------------------------------------------------------------------------
+STEP 7 — Physical Meaning of σ_v² and Tuning Guide
+--------------------------------------------------------------------------------
+
+σ_v² is the VARIANCE of the voltage noise on the motor terminals (V²).
+
+  σ_v² = 0.01  →  σ_v = 0.1 V RMS noise       (well-regulated drive)
+  σ_v² = 1.0   →  σ_v = 1.0 V RMS noise       (noisy drive / large model uncertainty)
+  σ_v² = 1e-5  →  σ_v = 3.2 mV RMS noise      (very clean / trust model heavily)
+
+Tuning rule:
+  1. Fix R = measured encoder variance (log position at rest, compute var())
+  2. Start σ_v² = 0.01
+  3. If KF velocity estimate is NOISY        → decrease σ_v² or increase R
+  4. If KF velocity estimate LAGS real motion → increase σ_v² or decrease R
+  5. The Q/R experiment (kf_exp[0..5]) sweeps these values so you can
+     compare all combinations simultaneously in Simulink.
+
+Effect on Kalman gain K:
+  Large Q  →  Large K  →  filter corrects fast (trusts measurements)
+  Small Q  →  Small K  →  filter corrects slowly (trusts model)
+
+================================================================================
+  Motor Parameters Used (from Live Expressions defaults):
+    J_eq  = 0.027    kg·m²
+    b_eq  = 0.5      N·m·s/rad
+    N     = 50       gear ratio
+    Kt    = 0.00747  N·m/A
+    Ke    = 0.0083   V·s/rad
+    L     = 0.0012794 H
+    R_arm = 2.8      Ω
+    Ts    = 0.001    s  (1 kHz TIM6 loop)
+================================================================================

@@ -1,0 +1,46 @@
+2026-05-11 00:10:34,689 [INFO] NvicIntPanel:101 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,0x0,invalid,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
+2026-05-11 00:10:52,037 [INFO] NvicIntPanel:101 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,0x0,invalid,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
+2026-05-11 00:11:41,511 [INFO] Gpio:278 - dependency for GPIO [LPUART1, TIM1, TIM3]
+2026-05-11 00:12:09,513 [INFO] NvicIntPanel:101 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,0x0,invalid,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
+2026-05-11 00:12:14,112 [INFO] UtilMem:75 - End SaveConfig() Used Memory: 650763952 Bytes (1073741824)
+2026-05-11 00:12:17,721 [INFO] UtilMem:75 - End SaveConfig() Used Memory: 713678512 Bytes (1073741824)
+2026-05-11 00:12:17,952 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: TIM6_7G4
+2026-05-11 00:12:17,953 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: TIM1_8G4
+2026-05-11 00:12:17,953 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: TIM1_8G4
+2026-05-11 00:12:17,953 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: SYS
+2026-05-11 00:12:17,953 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: RCC
+2026-05-11 00:12:17,953 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: LPUART
+2026-05-11 00:12:17,953 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: NVIC
+2026-05-11 00:12:17,954 [INFO] BlockDiagram:2775 - set Specific Code input for plugin: GPIO
+2026-05-11 00:12:17,955 [INFO] CodeGenerator:892 - code generatio: config db path: C:\ST\STM32CubeIDE_1.19.0\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.15.0.202507011659\\db\
+2026-05-11 00:12:18,079 [INFO] IP:3329 - RTE Config file name : RTE_Component
+2026-05-11 00:12:18,079 [INFO] IP:3347 - RTE template : RTE_Components.ftl
+2026-05-11 00:12:18,087 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\MXTmpFiles\license.tmp_save
+2026-05-11 00:12:18,366 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\MXTmpFiles\license.tmp
+2026-05-11 00:12:18,426 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\MXTmpFiles\gpio.tmp_save
+2026-05-11 00:12:18,600 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\MXTmpFiles\gpio.tmp
+2026-05-11 00:12:19,171 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Src\stm32g4xx_it.c_save
+2026-05-11 00:12:19,495 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Src\stm32g4xx_it.c
+2026-05-11 00:12:19,503 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Inc\stm32g4xx_it.h_save
+2026-05-11 00:12:19,575 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Inc\stm32g4xx_it.h
+2026-05-11 00:12:19,600 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Src\stm32g4xx_hal_msp.c_save
+2026-05-11 00:12:19,787 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Src\stm32g4xx_hal_msp.c
+2026-05-11 00:12:19,792 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\MXTmpFiles\system.tmp_save
+2026-05-11 00:12:19,854 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\MXTmpFiles\system.tmp
+2026-05-11 00:12:19,868 [INFO] CodeEngine:321 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Inc\stm32g4xx_hal_conf.h_save
+2026-05-11 00:12:19,991 [INFO] CodeEngine:345 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Inc\stm32g4xx_hal_conf.h
+2026-05-11 00:12:20,020 [WARN] IPConfigManager:3238 - Warning: the RefConfig RCC_CommonPeriphClockConfig is not available in your config.xml file
+2026-05-11 00:12:20,025 [WARN] IPConfigManager:3811 - IP not found : TIM
+2026-05-11 00:12:20,025 [WARN] CodeGenerator:4259 - IP not found : null
+2026-05-11 00:12:20,034 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Inc\main.h_save
+2026-05-11 00:12:20,160 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Inc\main.h
+2026-05-11 00:12:20,167 [INFO] CodeEngine:265 - oldGeneratedFile, C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Src\main.c_save
+2026-05-11 00:12:20,306 [INFO] CodeEngine:289 - Generated code: C:\Studio_2.68_G11\Control\Controller\Auto_Control\Core\Src\main.c
+2026-05-11 00:12:20,579 [INFO] ProjectBuilder:3606 - Time for Copy HAL[1] : 159mS.
+2026-05-11 00:12:20,582 [INFO] ProjectBuilder:5216 - Project Generator version: 4.7.0-B52
+2026-05-11 00:12:20,649 [INFO] ConfigFileManager:1595 - The Die is : DIE469
+2026-05-11 00:12:21,289 [INFO] ProjectBuilder:5496 - Time for Generating toolchain IDE Files: 707mS.
+2026-05-11 00:12:21,290 [INFO] ProjectBuilder:3463 - Time for Copy CMSIS : 1mS.
+2026-05-11 00:12:21,295 [INFO] ProjectBuilder:3463 - Time for Copy CMSIS : 0mS.
+2026-05-11 01:02:30,674 [INFO] WebApp:194 - Connection lost
+2026-05-11 01:02:31,308 [INFO] WebApp:191 - Connection restablished
