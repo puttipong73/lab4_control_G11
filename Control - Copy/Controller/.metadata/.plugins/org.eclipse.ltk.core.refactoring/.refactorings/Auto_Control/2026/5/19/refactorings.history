@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename resource &apos;Auto_Control/Core/Inc/ENCODER&apos; to &apos;ENCODER.h&apos;" description="Rename resource &apos;ENCODER&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Inc/ENCODER" name="ENCODER.h" stamp="1778355632764" updateReferences="true"/>
-</session>

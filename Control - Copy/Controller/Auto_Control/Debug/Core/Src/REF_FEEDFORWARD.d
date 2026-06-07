@@ -1,3 +1,0 @@
-Core/Src/REF_FEEDFORWARD.o: ../Core/Src/REF_FEEDFORWARD.c \
- ../Core/Inc/REF_FEEDFORWARD.h
-../Core/Inc/REF_FEEDFORWARD.h:

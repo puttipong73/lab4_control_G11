@@ -1,3 +1,0 @@
-FileName,SettlingTime_s,PeakTime_s,PercentOvershoot,SteadyStateError_rad
-velPID_1.01.0_posPID_1.0.0.mat,2.005,1.842,2.88015675544739,0.000815866224002093
-velPID_1.01.0_posPID_5.0.0.mat,1.566,1.819,0.51219654083252,0.000813720456790179

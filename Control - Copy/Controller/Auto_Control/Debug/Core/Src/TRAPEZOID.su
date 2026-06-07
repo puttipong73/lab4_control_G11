@@ -1,4 +1,0 @@
-../Core/Src/TRAPEZOID.c:3:6:Trapezoid_Init	24	static
-../Core/Src/TRAPEZOID.c:25:6:Trapezoid_SetTarget	40	static
-../Core/Src/TRAPEZOID.c:64:6:Trapezoid_SetTarget_ByTime	48	static
-../Core/Src/TRAPEZOID.c:109:6:Trapezoid_Update	32	static

@@ -1,5 +1,0 @@
-../Core/Src/SCURVE.c:7:13:Compute_Profile	48	static
-../Core/Src/SCURVE.c:58:6:SCurve_Init	40	static
-../Core/Src/SCURVE.c:76:6:SCurve_SetTarget	16	static
-../Core/Src/SCURVE.c:90:6:SCurve_SetTarget_ByTime	48	static
-../Core/Src/SCURVE.c:140:6:SCurve_Update	72	static

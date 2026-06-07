@@ -1,3 +1,0 @@
-../Core/Src/REF_FEEDFORWARD.c:3:6:RefFF_Init	1
-../Core/Src/REF_FEEDFORWARD.c:45:6:RefFF_Reset	1
-../Core/Src/REF_FEEDFORWARD.c:53:7:RefFF_Update	1

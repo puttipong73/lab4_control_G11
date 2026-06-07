@@ -1,3 +1,0 @@
-../Core/Src/DistFF.c:15:6:DistFF_Init	64	static
-../Core/Src/DistFF.c:49:6:DistFF_Reset	16	static
-../Core/Src/DistFF.c:55:7:DistFF_Update	24	static
